@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Financial Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
+    <script src="./app.js" defer></script>
+  </head>
+  <body class="theme-dark">
+    <div id="app">
+      <header class="topbar">
+        <div>
+          <h1 class="app-title">Financial Tracker</h1>
+          <p class="app-subtitle">Pencatat keuangan pribadi</p>
+        </div>
+        <button id="themeToggleBtn" class="ghost-btn" type="button">🌙 Dark</button>
+      </header>
+
+      <main class="content">
+        <section id="tab-beranda" class="tab-panel active">
+          <h2>Beranda</h2>
+          <div class="beranda-section">
+            <div class="section-head">
+              <h3>Kartu Kantong</h3>
+              <button id="refreshBerandaBtn" class="secondary-btn" type="button">Muat Ulang</button>
+            </div>
+            <div id="kantongCards" class="kantong-scroll"></div>
+          </div>
+
+          <div class="beranda-section">
+            <h3>Pengeluaran Periode Ini per Kategori</h3>
+            <div class="chart-wrap">
+              <canvas id="kategoriPieChart"></canvas>
+            </div>
+            <div id="kategoriLegend" class="legend-wrap"></div>
+          </div>
+
+          <div class="beranda-section">
+            <h3>Transaksi Terakhir</h3>
+            <div class="transaction-group">
+              <h4>5 Pengeluaran Terakhir</h4>
+              <div id="lastExpenseList" class="transaction-list"></div>
+            </div>
+            <div class="transaction-group">
+              <h4>5 Pemasukan Terakhir</h4>
+              <div id="lastIncomeList" class="transaction-list"></div>
+            </div>
+          </div>
+
+          <div class="beranda-section">
+            <div class="section-head">
+              <h3>Hutang</h3>
+              <button id="openHutangPageBtn" class="secondary-btn" type="button">Lihat Semua</button>
+            </div>
+            <p class="placeholder">Lihat dan lunasi hutang dari halaman Hutang.</p>
+          </div>
+        </section>
+
+        <section id="tab-hutang" class="tab-panel">
+          <div class="section-head">
+            <h2>Hutang</h2>
+            <button id="backFromHutangBtn" class="secondary-btn" type="button">Kembali</button>
+          </div>
+          <div class="beranda-section">
+            <h3>Aku yang berhutang</h3>
+            <div id="hutangKeluarList" class="transaction-list"></div>
+          </div>
+          <div class="beranda-section">
+            <h3>Yang berhutang ke aku</h3>
+            <div id="hutangMasukList" class="transaction-list"></div>
+          </div>
+        </section>
+
+        <section id="tab-insight" class="tab-panel">
+          <div class="section-head">
+            <h2>Insight</h2>
+            <button id="refreshInsightBtn" class="secondary-btn" type="button">Muat Ulang</button>
+          </div>
+
+          <div class="beranda-section">
+            <h3>Pengeluaran Harian Semua Kantong</h3>
+            <div class="chart-wrap">
+              <canvas id="insightStackedChart"></canvas>
+            </div>
+          </div>
+
+          <div class="beranda-section">
+            <h3>Detail Kantong Jajan</h3>
+            <div class="chart-wrap">
+              <canvas id="insightJajanChart"></canvas>
+            </div>
+          </div>
+
+          <div class="beranda-section">
+            <h3>AI Insights (Segera Hadir)</h3>
+            <p class="placeholder">
+              Integrasi Gemini belum diaktifkan. Fitur AI Insight Mingguan dan Bulanan akan ditambahkan setelah fase aplikasi inti selesai.
+            </p>
+          </div>
+        </section>
+
+        <section id="tab-pengaturan" class="tab-panel">
+          <h2>Pengaturan</h2>
+          <div class="settings-card">
+            <h3>Periode Aktif</h3>
+            <p id="activePeriodeInfo" class="status-text">Memuat periode aktif...</p>
+            <div class="form-row two-col">
+              <div>
+                <label for="periodeMulaiInput">Tanggal Mulai</label>
+                <input id="periodeMulaiInput" type="date" />
+              </div>
+              <div>
+                <label for="periodeSelesaiInput">Tanggal Selesai</label>
+                <input id="periodeSelesaiInput" type="date" />
+              </div>
+            </div>
+            <button id="savePeriodeBtn" type="button">Atur Periode Baru</button>
+          </div>
+
+          <div class="settings-card">
+            <div class="section-head">
+              <h3>Kelola Kantong</h3>
+              <button id="reloadKantongSettingsBtn" class="secondary-btn" type="button">Muat Ulang</button>
+            </div>
+            <div id="kantongSettingsList" class="transaction-list"></div>
+          </div>
+
+          <div class="settings-card">
+            <h3>Kelola Kategori</h3>
+            <div class="form-row two-col">
+              <div>
+                <label for="newKategoriNama">Nama Kategori</label>
+                <input id="newKategoriNama" type="text" placeholder="Contoh: Kesehatan" />
+              </div>
+              <div>
+                <label for="newKategoriEmoji">Emoji</label>
+                <input id="newKategoriEmoji" type="text" placeholder="🩺" />
+              </div>
+            </div>
+            <label for="newKategoriTipe">Tipe Kategori</label>
+            <select id="newKategoriTipe">
+              <option value="pengeluaran">pengeluaran</option>
+              <option value="pemasukan">pemasukan</option>
+              <option value="keduanya">keduanya</option>
+            </select>
+            <button id="addKategoriBtn" type="button">Tambah Kategori</button>
+            <div id="kategoriSettingsList" class="transaction-list"></div>
+          </div>
+
+          <div class="settings-card">
+            <h3>Konfigurasi API</h3>
+            <label for="gasUrlInput">Google Apps Script Web App URL</label>
+            <input id="gasUrlInput" type="url" placeholder="https://script.google.com/macros/s/...../exec" autocomplete="off" />
+            <label for="geminiApiKeyInput">Gemini API Key (opsional dulu)</label>
+            <input id="geminiApiKeyInput" type="password" placeholder="AIza..." autocomplete="off" />
+            <button id="saveGASUrlBtn" type="button">Simpan URL & API Key</button>
+            <button id="testConnectionBtn" class="secondary-btn" type="button">Tes Koneksi</button>
+            <p id="connectionStatus" class="status-text">Belum ada pengujian koneksi.</p>
+          </div>
+        </section>
+      </main>
+
+      <button id="fabTambah" class="fab" type="button" aria-label="Tambah transaksi">+</button>
+
+      <nav class="bottom-nav">
+        <button class="nav-item active" data-target="beranda" type="button">🏠<span>Beranda</span></button>
+        <button class="nav-item" data-target="insight" type="button">📊<span>Insight</span></button>
+        <button class="nav-item" data-target="pengaturan" type="button">⚙️<span>Pengaturan</span></button>
+      </nav>
+
+      <div id="trxModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="trxModalTitle">
+        <div id="trxBackdrop" class="modal-backdrop"></div>
+        <div class="modal-sheet">
+          <div class="modal-head">
+            <h3 id="trxModalTitle">Transaksi Baru</h3>
+            <button id="closeTrxModalBtn" class="ghost-btn" type="button">Tutup</button>
+          </div>
+
+          <form id="trxForm" class="trx-form">
+            <div class="form-row two-col">
+              <div>
+                <label for="trxTanggal">Tanggal</label>
+                <input id="trxTanggal" name="tanggal" type="date" required />
+              </div>
+              <div>
+                <label for="trxJam">Jam</label>
+                <input id="trxJam" name="jam" type="time" required />
+              </div>
+            </div>
+
+            <label for="trxTipe">Tipe Transaksi</label>
+            <select id="trxTipe" name="tipe" required>
+              <option value="pengeluaran">Pengeluaran</option>
+              <option value="pemasukan">Pemasukan</option>
+              <option value="hutang">Hutang</option>
+              <option value="pindah_kantong">Pindah Kantong</option>
+              <option value="koreksi_saldo">Koreksi Saldo</option>
+            </select>
+
+            <div id="universalNominalBlock">
+              <label for="trxNominal">Nominal</label>
+              <input id="trxNominal" name="nominal" type="number" min="0" step="1" required />
+            </div>
+
+            <label for="trxCatatan">Catatan (opsional)</label>
+            <input id="trxCatatan" name="catatan" type="text" />
+
+            <div id="pengeluaranFields" class="conditional-fields">
+              <label for="trxKantongAsalPengeluaran">Kantong</label>
+              <select id="trxKantongAsalPengeluaran"></select>
+              <label for="trxKategoriPengeluaran">Kategori Pengeluaran</label>
+              <select id="trxKategoriPengeluaran"></select>
+            </div>
+
+            <div id="pemasukanFields" class="conditional-fields hidden">
+              <label for="trxKantongTujuanPemasukan">Kantong Tujuan</label>
+              <select id="trxKantongTujuanPemasukan"></select>
+              <label for="trxKategoriPemasukan">Kategori Pemasukan</label>
+              <select id="trxKategoriPemasukan"></select>
+            </div>
+
+            <div id="hutangFields" class="conditional-fields hidden">
+              <label for="trxTipeHutang">Tipe Hutang</label>
+              <select id="trxTipeHutang">
+                <option value="hutang_keluar">Aku berhutang (uang keluar dulu)</option>
+                <option value="hutang_masuk">Orang berhutang ke aku (uang masuk dulu)</option>
+              </select>
+              <label for="trxKantongAsalHutang">Kantong Asal</label>
+              <select id="trxKantongAsalHutang"></select>
+              <label for="trxHutangTujuanMode">Tujuan Hutang</label>
+              <select id="trxHutangTujuanMode">
+                <option value="kantong">Kantong Tujuan</option>
+                <option value="orang">Orang Lain</option>
+              </select>
+              <div id="hutangKantongTujuanBlock">
+                <label for="trxKantongTujuanHutang">Kantong Tujuan</label>
+                <select id="trxKantongTujuanHutang"></select>
+              </div>
+              <div id="hutangOrangBlock" class="hidden">
+                <label for="trxNamaOrangHutang">Nama Orang</label>
+                <input id="trxNamaOrangHutang" type="text" />
+                <label for="trxAlasanHutang">Alasan Hutang</label>
+                <input id="trxAlasanHutang" type="text" />
+                <label for="trxDeadlineHutang">Deadline</label>
+                <input id="trxDeadlineHutang" type="date" />
+              </div>
+            </div>
+
+            <div id="pindahFields" class="conditional-fields hidden">
+              <label for="trxKantongAsalPindah">Kantong Asal</label>
+              <select id="trxKantongAsalPindah"></select>
+              <label for="trxKantongTujuanPindah">Kantong Tujuan</label>
+              <select id="trxKantongTujuanPindah"></select>
+            </div>
+
+            <div id="koreksiFields" class="conditional-fields hidden">
+              <label for="trxKantongKoreksi">Kantong</label>
+              <select id="trxKantongKoreksi"></select>
+              <label for="trxSaldoBaruKoreksi">Saldo Baru</label>
+              <input id="trxSaldoBaruKoreksi" type="number" min="0" step="1" />
+              <label for="trxAlasanKoreksi">Alasan Koreksi (wajib)</label>
+              <input id="trxAlasanKoreksi" type="text" />
+            </div>
+
+            <div class="form-row two-col">
+              <div>
+                <label for="trxBiaya">Biaya Transaksi/Transfer</label>
+                <input id="trxBiaya" name="biaya_transaksi" type="number" min="0" step="1" value="0" />
+              </div>
+              <div class="align-end">
+                <button id="submitTrxBtn" type="submit">Simpan Transaksi</button>
+              </div>
+            </div>
+            <p id="trxFormStatus" class="status-text">Isi form lalu simpan.</p>
+          </form>
+        </div>
+      </div>
+
+      <div id="lunasModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="lunasModalTitle">
+        <div id="lunasBackdrop" class="modal-backdrop"></div>
+        <div class="modal-sheet">
+          <div class="modal-head">
+            <h3 id="lunasModalTitle">Lunasi Hutang</h3>
+            <button id="closeLunasModalBtn" class="ghost-btn" type="button">Tutup</button>
+          </div>
+          <form id="lunasForm" class="trx-form">
+            <input id="lunasHutangId" type="hidden" />
+            <label for="lunasNominal">Nominal Pelunasan</label>
+            <input id="lunasNominal" type="number" min="1" step="1" required />
+            <label for="lunasBiaya">Biaya Transfer</label>
+            <input id="lunasBiaya" type="number" min="0" step="1" value="0" />
+            <label for="lunasKantongPembayar">Kantong Pembayar</label>
+            <select id="lunasKantongPembayar"></select>
+            <button type="submit">Proses Pelunasan</button>
+            <p id="lunasStatus" class="status-text">Pilih data lalu simpan.</p>
+          </form>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
