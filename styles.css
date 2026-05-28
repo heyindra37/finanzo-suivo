@@ -524,9 +524,9 @@ body.theme-light select {
     margin: 0 auto;
   }
 
-  .tab-panel#tab-beranda,
-  .tab-panel#tab-insight,
-  .tab-panel#tab-pengaturan {
+  .tab-panel.active#tab-beranda,
+  .tab-panel.active#tab-insight,
+  .tab-panel.active#tab-pengaturan {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1rem;
