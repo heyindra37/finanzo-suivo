@@ -248,7 +248,8 @@ function formatRupiah(value) {
 
 function formatDateDisplay(dateStr, timeStr) {
   if (!dateStr) return "-";
-  const dt = new Date(`${dateStr}T${timeStr || "00:00:00"}`);
+  const dt = parseDateTimeSafe(dateStr, timeStr);
+  if (!dt) return String(dateStr);
   const datePart = new Intl.DateTimeFormat("id-ID", {
     day: "2-digit",
     month: "short",
@@ -256,6 +257,31 @@ function formatDateDisplay(dateStr, timeStr) {
   }).format(dt);
   const timePart = timeStr ? ` ${timeStr.slice(0, 5)}` : "";
   return `${datePart}${timePart}`;
+}
+
+function parseDateTimeSafe(dateVal, timeVal) {
+  if (!dateVal) return null;
+  const timePart = normalizeTimeValue(timeVal);
+
+  // Try ISO-friendly composition first
+  const isoCandidate = `${String(dateVal).trim()}T${timePart}`;
+  let parsed = new Date(isoCandidate);
+  if (!Number.isNaN(parsed.getTime())) return parsed;
+
+  // Fallback: date-only parsing from Sheets/custom formats
+  parsed = new Date(dateVal);
+  if (Number.isNaN(parsed.getTime())) return null;
+  const [h, m, s] = timePart.split(":").map((x) => Number(x || 0));
+  parsed.setHours(h || 0, m || 0, s || 0, 0);
+  return parsed;
+}
+
+function normalizeTimeValue(value) {
+  if (!value) return "00:00:00";
+  const t = String(value).trim();
+  if (/^\d{2}:\d{2}$/.test(t)) return `${t}:00`;
+  if (/^\d{2}:\d{2}:\d{2}$/.test(t)) return t;
+  return "00:00:00";
 }
 
 function getChartColors(count) {
@@ -400,12 +426,17 @@ function renderPieCategoryByPeriod(transaksi, periodeAktif) {
     return;
   }
 
-  const start = new Date(`${periodeAktif.tanggal_mulai}T00:00:00`);
-  const end = new Date(`${periodeAktif.tanggal_selesai}T23:59:59`);
+  const start = parseDateTimeSafe(periodeAktif.tanggal_mulai, "00:00:00");
+  const end = parseDateTimeSafe(periodeAktif.tanggal_selesai, "23:59:59");
+  if (!start || !end) {
+    legendEl.innerHTML = `<p class="placeholder">Format tanggal periode tidak valid.</p>`;
+    return;
+  }
 
   const filtered = transaksi.filter((t) => {
     if (String(t.tipe).toLowerCase() !== "pengeluaran") return false;
-    const dt = new Date(`${t.tanggal}T${t.jam || "00:00:00"}`);
+    const dt = parseDateTimeSafe(t.tanggal, t.jam);
+    if (!dt) return false;
     return dt >= start && dt <= end;
   });
 
